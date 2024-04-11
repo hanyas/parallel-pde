@@ -1,20 +1,17 @@
-import matplotlib.pyplot as plt
-from jax import config
-
-config.update("jax_enable_x64", True)
-# config.update("jax_platform_name", "cuda")
-# config.update("jax_debug_nans", True)
-# config.update("jax_disable_jit", True)
-
 from functools import partial
 from typing import Callable, NamedTuple
 
 import jax
 import jax.numpy as jnp
-import numpy as np
+import matplotlib.pyplot as plt
 from parsmooth._base import FunctionalModel, MVNStandard
 from parsmooth.linearization import extended
 from parsmooth.methods import iterated_smoothing
+
+jax.config.update("jax_enable_x64", True)
+# jax.config.update("jax_platform_name", "cuda")
+# jax.config.update("jax_debug_nans", True)
+# jax.config.update("jax_disable_jit", True)
 
 
 class PDE(NamedTuple):
@@ -26,7 +23,6 @@ class PDE(NamedTuple):
     T: float
     dx: float
     dt: float
-    flux: Callable
 
 
 def construct_grid(pde: PDE):
@@ -68,12 +64,13 @@ def get_transition_model(
 
 
 def pseudo_observation_fn(pde: PDE, x: jax.Array):
+    """This is specific for Burgers' equation."""
     J = int(len(x) / 2) + 1
     u = x[: J - 1]
     u_jp1 = jnp.concat((u[1:], jnp.array([pde.u_b])))
     u_jm1 = jnp.concat((jnp.array([pde.u_a]), u[:-1]))
-    f = (pde.flux(u_jp1) - pde.flux(u_jm1)) / (2.0 * pde.dx)
-
+    approx_deriv = (u_jp1 - u_jm1) / (2.0 * pde.dx)
+    f = u * approx_deriv
     du = x[J - 1 :]
     return du + f
 
@@ -110,9 +107,11 @@ def solve_pde(pde: PDE, n_iter: int = 1):
 
 
 if __name__ == "__main__":
-    flux = lambda u: u**2 / 2
-    u_0 = lambda u: -jnp.sin(jnp.pi * u)
-    burgers = PDE(-1.0, 1.0, 0.0, 0.0, u_0, 1.5, 0.02, 0.02, flux)
+
+    def u_0(u):
+        return -jnp.sin(jnp.pi * u)
+
+    burgers = PDE(-1.0, 1.0, 0.0, 0.0, u_0, 1.5, 0.02, 0.02)
     t, x, smoothed_trajectory = solve_pde(burgers)
 
     # Get the posterior mean and variance of the solution.
@@ -124,19 +123,19 @@ if __name__ == "__main__":
 
     # Plotting code from Simo.
     # Frame have to be adjusted according to the discretization.
-    # ps_frames = [0, 50, 100, 150]
-    # fig = plt.figure(figsize=(12, 9))
-    # for idx, frame_idx in enumerate(ps_frames):
-    #     ax = fig.add_subplot(1, 4, idx + 1)
-    #     ax.fill_between(
-    #         x[1:-1],
-    #         us[frame_idx, :] - 1.96 * np.sqrt(Ps[frame_idx, :]),
-    #         us[frame_idx, :] + 1.96 * np.sqrt(Ps[frame_idx, :]),
-    #         label="Confidence",
-    #     )
-    #     ax.plot(x[1:-1], us[frame_idx, :], "r-", linewidth=2.0, label="IEKS")
-    #     if idx == 0:
-    #         ax.set_ylabel("$u$", fontsize="large")
-    #     ax.set_title(r"time = {:.2f}".format(t[frame_idx + 1]), fontsize="large")
-    #     ax.legend(fontsize="large", loc="upper right")
-    # plt.show()
+    ps_frames = [0, 50, 100, 150]
+    fig = plt.figure(figsize=(12, 9))
+    for idx, frame_idx in enumerate(ps_frames):
+        ax = fig.add_subplot(1, 4, idx + 1)
+        ax.fill_between(
+            x[1:-1],
+            us[frame_idx, :] - 1.96 * jnp.sqrt(Ps[frame_idx, :]),
+            us[frame_idx, :] + 1.96 * jnp.sqrt(Ps[frame_idx, :]),
+            label="Confidence",
+        )
+        ax.plot(x[1:-1], us[frame_idx, :], "r-", linewidth=2.0, label="IEKS")
+        if idx == 0:
+            ax.set_ylabel("$u$", fontsize="large")
+        ax.set_title(r"time = {:.2f}".format(t[frame_idx + 1]), fontsize="large")
+        ax.legend(fontsize="large", loc="upper right")
+    plt.show()
