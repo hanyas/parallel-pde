@@ -23,6 +23,7 @@ class PDE(NamedTuple):
     T: float
     dx: float
     dt: float
+    flux: Callable
 
 
 def construct_grid(pde: PDE):
@@ -69,8 +70,9 @@ def pseudo_observation_fn(pde: PDE, x: jax.Array):
     u = x[: J - 1]
     u_jp1 = jnp.concat((u[1:], jnp.array([pde.u_b])))
     u_jm1 = jnp.concat((jnp.array([pde.u_a]), u[:-1]))
-    approx_deriv = (u_jp1 - u_jm1) / (2.0 * pde.dx)
-    f = u * approx_deriv
+    f = (pde.flux(u_jp1) - pde.flux(u_jm1)) / (2.0 * pde.dx)
+    # approx_deriv = (u_jp1 - u_jm1) / (2.0 * pde.dx)
+    # f = u * approx_deriv
     du = x[J - 1 :]
     return du + f
 
@@ -108,10 +110,15 @@ def solve_pde(pde: PDE, n_iter: int = 1):
 
 if __name__ == "__main__":
 
+    def flux(u):
+        return 0.5 * u**2
+
     def u_0(u):
         return -jnp.sin(jnp.pi * u)
 
-    burgers = PDE(-1.0, 1.0, 0.0, 0.0, u_0, 1.5, 0.02, 0.02)
+    dx = 0.01
+    dt = 0.01
+    burgers = PDE(-1.0, 1.0, 0.0, 0.0, u_0, 1.5, dx, dt, flux)
     t, x, smoothed_trajectory = solve_pde(burgers)
 
     # Get the posterior mean and variance of the solution.

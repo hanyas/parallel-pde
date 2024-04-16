@@ -7,5 +7,6 @@
 
 The first working example is in `examples/burgers.py`.
 
-## TODO
-- [ ] Try the square-root Kalman filter for Burger's equation. Currently dense grids produce NaNs.
+## Issues
+- The square root version of the smoother is very slow. Could be the QR decomposition that's to blame.
+- Using `parallel=True` in `iterated_smoothing` returns a different, and worse, solution. The tests for the parallel implementation in `sqrt-parallel-smoothers` all pass, so not sure why this is happening.
