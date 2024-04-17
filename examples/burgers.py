@@ -6,7 +6,7 @@ import jax.numpy as jnp
 import matplotlib.pyplot as plt
 from parsmooth._base import FunctionalModel, MVNStandard
 from parsmooth.linearization import extended
-from parsmooth.methods import iterated_smoothing
+from parsmooth.methods import filter_smoother, iterated_smoothing
 
 jax.config.update("jax_enable_x64", True)
 # jax.config.update("jax_platform_name", "cuda")
@@ -51,7 +51,7 @@ def get_transition_model(
     dx = pde.dx
 
     # IWP-1 prior.
-    A_dt = jnp.array([[1, dt], [0, 0]])
+    A_dt = jnp.array([[1, dt], [0, 1]])
     Q_dt = q * jnp.array([[dt**3 / 3, dt**2 / 2], [dt**2 / 2, dt]])
 
     J = len(x) - 1
@@ -71,8 +71,6 @@ def pseudo_observation_fn(pde: PDE, x: jax.Array):
     u_jp1 = jnp.concat((u[1:], jnp.array([pde.u_b])))
     u_jm1 = jnp.concat((jnp.array([pde.u_a]), u[:-1]))
     f = (pde.flux(u_jp1) - pde.flux(u_jm1)) / (2.0 * pde.dx)
-    # approx_deriv = (u_jp1 - u_jm1) / (2.0 * pde.dx)
-    # f = u * approx_deriv
     du = x[J - 1 :]
     return du + f
 
@@ -95,14 +93,18 @@ def solve_pde(pde: PDE, n_iter: int = 1):
         lambda s: pseudo_observation_fn(pde, s), MVNStandard(jnp.zeros(J - 1), 0.0)
     )
     observations = jnp.zeros((N, J - 1))
+    init_nominal_trajectory = filter_smoother(
+        observations, s0, transition_model, observation_model, extended, None, False
+    )
     smoothed_trajectory = iterated_smoothing(
         observations,
         s0,
         transition_model,
         observation_model,
         extended,
+        init_nominal_trajectory,
         criterion=lambda i, *_: i < n_iter + 1,
-        parallel=False,
+        parallel=True,
         return_loglikelihood=False,
     )
     return t, x, smoothed_trajectory
