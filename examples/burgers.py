@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from parsmooth._base import FunctionalModel, MVNStandard
 from parsmooth.linearization import extended
 from parsmooth.methods import filter_smoother, iterated_smoothing
+from burgers_cole_hopf import run_ch
 
 jax.config.update("jax_enable_x64", True)
 # jax.config.update("jax_platform_name", "cuda")
@@ -45,7 +46,7 @@ def construct_gram_matrix(x: jax.Array, kernel_fn: Callable, *args):
 
 
 def get_transition_model(
-    pde: PDE, x: jax.Array, q: float = 10.0, sigma: float = 10.0, nell: float = 2.0
+    pde: PDE, x: jax.Array, q: float = 1.0, sigma: float = 10.0, nell: float = 2.0
 ):
     dt = pde.dt
     dx = pde.dx
@@ -111,16 +112,24 @@ def solve_pde(pde: PDE, n_iter: int = 1):
 
 
 if __name__ == "__main__":
+    
+    T = 1.5
+    a = -1
+    b = 1
 
     def flux(u):
         return 0.5 * u**2
 
     def u_0(u):
         return -jnp.sin(jnp.pi * u)
+    
+    ch_dt = 0.001
+    ch_dx = 0.01
+    ch_t, ch_x, u_CH = run_ch(ch_dt,ch_dx,T,a,b)
 
-    dx = 0.01
-    dt = 0.01
-    burgers = PDE(-1.0, 1.0, 0.0, 0.0, u_0, 1.5, dx, dt, flux)
+    dx = 0.05
+    dt = 0.02
+    burgers = PDE(a, b, 0.0, 0.0, u_0, T, dx, dt, flux)
     t, x, smoothed_trajectory = solve_pde(burgers)
 
     # Get the posterior mean and variance of the solution.
@@ -132,7 +141,8 @@ if __name__ == "__main__":
 
     # Plotting code from Simo.
     # Frame have to be adjusted according to the discretization.
-    ps_frames = [0, 50, 100, 150]
+    ps_frames = [0, int(T/dt/3), int(2*T/dt/3), int(T/dt)]
+    ch_frames = [0, int(T/ch_dt/3), int(2*T/ch_dt/3), int(T/ch_dt)]
     fig = plt.figure(figsize=(12, 9))
     for idx, frame_idx in enumerate(ps_frames):
         ax = fig.add_subplot(1, 4, idx + 1)
@@ -143,8 +153,9 @@ if __name__ == "__main__":
             label="Confidence",
         )
         ax.plot(x[1:-1], us[frame_idx, :], "r-", linewidth=2.0, label="IEKS")
+        ax.plot(ch_x, u_CH[ch_frames[idx], :], 'k--', linewidth = 2.5, label = 'CH')
         if idx == 0:
             ax.set_ylabel("$u$", fontsize="large")
-        ax.set_title(r"time = {:.2f}".format(t[frame_idx + 1]), fontsize="large")
+        ax.set_title(r"time = {:.2f}".format(t[frame_idx]), fontsize="large")
         ax.legend(fontsize="large", loc="upper right")
     plt.show()
