@@ -45,7 +45,7 @@ def construct_gram_matrix(x: jax.Array, kernel_fn: Callable, *args):
 
 def get_transition_model(
     pde: PDE, x_grid: jax.Array, q: float = 1.0,
-    sigma: float = 10.0, nell: float = 2.0
+    sigma: float = 1.5, nell: float = 1.0
 ):
     dt = pde.dt
     dx = pde.dx
