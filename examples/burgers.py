@@ -8,6 +8,8 @@ from parsmooth._base import FunctionalModel, MVNStandard
 from parsmooth.linearization import extended
 from parsmooth.methods import filter_smoother, iterated_smoothing
 
+from burgers_cole_hopf import run_cole_hopf
+
 import time
 import matplotlib.pyplot as plt
 
@@ -44,7 +46,7 @@ def construct_gram_matrix(x: jax.Array, kernel_fn: Callable, *args):
 
 def get_transition_model(
     pde: PDE, x_grid: jax.Array, q: float = 0.5,
-    sigma: float = 25, nell: float = 2.0
+    sigma: float = 25.0, nell: float = 2.0
 ):
     dt = pde.dt
     dx = pde.dx
@@ -106,6 +108,8 @@ if __name__ == "__main__":
 
     dx = 0.01
     dt = 0.01
+
+    t_grid_ch, x_grid_ch, us_ch = run_cole_hopf(dt, dx, max_t, min_x, max_x)
 
     pde = PDE(min_x, max_x, 0.0, 0.0, u_0, max_t, dx, dt, flux)
 
@@ -187,6 +191,7 @@ if __name__ == "__main__":
 
     # Frame have to be adjusted according to the discretization
     ieks_frames = [0, int(max_t / dt / 3), int(2 * max_t / dt / 3), int(max_t / dt)]
+    ch_frames = [0, int(max_t / dt / 3), int(2 * max_t / dt / 3), int(max_t / dt)]
 
     fig = plt.figure(figsize=(12, 9))
     for idx, frame_idx in enumerate(ieks_frames):
@@ -198,6 +203,7 @@ if __name__ == "__main__":
             label="Confidence",
         )
         ax.plot(x_grid[1:-1], us_par[frame_idx, :], "r-", linewidth=2.0, label="IEKS")
+        ax.plot(x_grid_ch, us_ch[ch_frames[idx], :], 'k--', linewidth=2.5, label='CH')
         if idx == 0:
             ax.set_ylabel("$u$", fontsize="large")
         ax.set_title(r"time = {:.2f}".format(t_grid[frame_idx]), fontsize="large")
@@ -221,6 +227,7 @@ if __name__ == "__main__":
 
     # Frame have to be adjusted according to the discretization
     ieks_frames = [0, int(max_t / dt / 3), int(2 * max_t / dt / 3), int(max_t / dt)]
+    ch_frames = [0, int(max_t / dt / 3), int(2 * max_t / dt / 3), int(max_t / dt)]
 
     fig = plt.figure(figsize=(12, 9))
     for idx, frame_idx in enumerate(ieks_frames):
@@ -232,6 +239,7 @@ if __name__ == "__main__":
             label="Confidence",
         )
         ax.plot(x_grid[1:-1], us_seq[frame_idx, :], "r-", linewidth=2.0, label="IEKS")
+        ax.plot(x_grid_ch, us_ch[ch_frames[idx], :], 'k--', linewidth=2.5, label='CH')
         if idx == 0:
             ax.set_ylabel("$u$", fontsize="large")
         ax.set_title(r"time = {:.2f}".format(t_grid[frame_idx]), fontsize="large")
