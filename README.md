@@ -1,12 +1,25 @@
-# IEKS for PDEs
+# Parallel-in-Time Probabilistic Solutions for PDEs
 
 ## Installation
-1. Install JAX for the available hardware following [https://github.com/google/jax#installation](https://github.com/google/jax#installation).
-2. Install [sqrt-parallel-smoothers](https://github.com/EEA-sensors/sqrt-parallel-smoothers) in editable mode (some function signatures have changed in recent JAX versions and may need to be edited).
-3. Install `pytest` for testing and `matplotlib` for plots, if needed.
+ 
+Create a conda environment
+    
+    conda create -n NAME python=3.11
 
-The first working example is in `examples/burgers.py`.
+then install a GPU-supported version of JAX
+ 
+    pip install -U "jax[cuda12_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+     
+To avoide numerical problems downgrade to an earlier JAX-lib version
+ 
+    pip install jaxlib==0.4.20+cuda12.cudnn89 -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 
-## Issues
-- The square root version of the smoother is very slow. Could be the QR decomposition that's to blame.
-- Using `parallel=True` in `iterated_smoothing` returns a different, and worse, solution. The tests for the parallel implementation in `sqrt-parallel-smoothers` all pass, so not sure why this is happening.
+Finally, install parallel-in-time Kalman-smoothers toolbox
+
+    pip install git+https://github.com/hanyas/sqrt-parallel-smoothers
+
+Install `pytest` for testing and `matplotlib` for plots, if needed.
+
+ ## Examples
+ 
+    python examples/burgers.py
