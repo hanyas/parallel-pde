@@ -26,21 +26,21 @@ def cole_hopf(u, ti, xjs, num_x):
     return u
 
 
-def run_cole_hopf(dt, dx, max_t, min_x, max_x):
+def run_cole_hopf(dt, dx, t, a, b):
     # the number of spatial grid points
-    J = int((max_x - min_x) / dx)
+    xs_size = int((b - a) / dx)
     # the number of temporal grid points
-    N = int(max_t / dt)
+    ts_size = int(t / dt)
     # construct the mesh in (t, x)
-    x = np.linspace(min_x, max_x, J + 1)    # mesh points in space
-    t = np.linspace(0, max_t, N + 1)        # mesh points in time
-    u_LF = np.zeros((N + 1, J + 1))         # unknown u at new time level for LF
-    u_LW = np.zeros((N + 1, J + 1))         # unknown u at new time level for LW
-    u_quad = np.zeros((N + 1, J + 1))       # unknown u at new time level for Cole-Hopf
+    xs = np.linspace(a, b, xs_size + 1)               # mesh points in space
+    ts = np.linspace(0, t, ts_size + 1)               # mesh points in time
+    u_LF = np.zeros((ts_size + 1, xs_size + 1))      # unknown u at new time level for LF
+    u_LW = np.zeros((ts_size + 1, xs_size + 1))      # unknown u at new time level for LW
+    u_quad = np.zeros((ts_size + 1, xs_size + 1))    # unknown u at new time level for Cole-Hopf
     # Set initial condition
-    u_quad[0, :] = u_0(x)
+    u_quad[0, :] = u_0(xs)
     # advance in time
-    for n in range(1, N + 1):
-        u_quad[n, :] = cole_hopf(u_quad[n, :], t[n], x, J + 1)
+    for n in range(1, ts_size + 1):
+        u_quad[n, :] = cole_hopf(u_quad[n, :], ts[n], xs, xs_size + 1)
         
-    return t, x, u_quad
+    return xs, ts, u_quad
