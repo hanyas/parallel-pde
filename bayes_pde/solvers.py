@@ -27,6 +27,7 @@ def sequential_solver(
     transition_model,
     observation_model,
     init_trajectory,
+    linearization_method=extended,
     nb_iter=10,
     return_loglikelihood=False
 ):
@@ -35,7 +36,7 @@ def sequential_solver(
         prior,
         transition_model,
         observation_model,
-        cubature,
+        linearization_method,
         init_trajectory,
         parallel=False,
         criterion=lambda i, *_: i < nb_iter,
@@ -49,6 +50,7 @@ def parallel_solver(
     transition_model,
     observation_model,
     init_trajectory,
+    linearization_method=extended,
     nb_iter=10,
     return_loglikelihood=False
 ):
@@ -57,7 +59,7 @@ def parallel_solver(
         prior,
         transition_model,
         observation_model,
-        cubature,
+        linearization_method,
         init_trajectory,
         parallel=True,
         criterion=lambda i, *_: i < nb_iter,
