@@ -12,7 +12,7 @@ from allen_cahn_high_fidelity import run_high_fidelity
 
 from parsmooth._base import FunctionalModel, MVNStandard
 from parsmooth.methods import filter_smoother
-from parsmooth.linearization import cubature
+from parsmooth.linearization import extended
 
 import time
 import matplotlib.pyplot as plt
@@ -67,8 +67,8 @@ if __name__ == "__main__":
     )
     prior = MVNStandard(m0, P0)
 
-    spatial_params = SEParams(length_scale=1.0, signal_stddev=2.5)
-    temporal_params = IWParams(noise_stddev=1.5)
+    spatial_params = SEParams(length_scale=1.0, signal_stddev=1.0)
+    temporal_params = IWParams(noise_stddev=1.0)
 
     A, Q = spatio_temporal(
         spatial_params,
@@ -98,7 +98,7 @@ if __name__ == "__main__":
         prior,
         transition_model,
         observation_model,
-        cubature,
+        extended,
         None,
         False
     )
@@ -111,7 +111,8 @@ if __name__ == "__main__":
             transition_model,
             observation_model,
             init_trajectory,
-            nb_iter=25,
+            extended,
+            nb_iter=50,
         )
 
     start = time.time()
@@ -147,3 +148,26 @@ if __name__ == "__main__":
         ax.set_title(r"time = {:.2f}".format(ts[frame_idx]), fontsize="large")
         ax.legend(fontsize="large", loc="lower right")
     plt.show()
+
+
+    # import pandas as pd
+    #
+    # cwd = "/tmp/pycharm_project_689/experiments/plots"
+    #
+    # for idx, frame_idx in enumerate(hf_frames):
+    #     out = pd.DataFrame({
+    #         "x": xs_hf,
+    #         "y": us_hf[frame_idx, :],
+    #     })
+    #     file_name = f"{cwd}/allen-cahn_ref_time_{ts[frame_idx]}.csv"
+    #     out.to_csv(file_name, index=False)
+    #
+    #
+    # for idx, frame_idx in enumerate(ieks_frames):
+    #     out = pd.DataFrame({
+    #         "x": xs[1:-1],
+    #         "y": us_par[frame_idx, :],
+    #         "err": 2.0 * jnp.sqrt(Ps_par[frame_idx, :]),
+    #     })
+    #     file_name = f"{cwd}/allen-cahn_sol_time_{ts[frame_idx]}.csv"
+    #     out.to_csv(file_name, index=False)
