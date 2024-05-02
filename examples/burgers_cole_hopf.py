@@ -11,9 +11,9 @@ from numpy.polynomial.hermite import hermgauss
 # define the initial condition
 u_0 = lambda x: -np.sin(np.pi * x)
 
-qn = 128  # order of the quadarture
+qn = 128                # order of the quadarture
 qx, qw = hermgauss(qn)  # points and weights
-nu = 0.005/np.pi        # artificial viscosity
+nu = 0.005 / np.pi      # artificial viscosity
 c2 = 2.0 * np.pi * nu
 
 
@@ -34,9 +34,9 @@ def run_cole_hopf(dt, dx, t, a, b):
     # construct the mesh in (t, x)
     xs = np.linspace(a, b, xs_size + 1)               # mesh points in space
     ts = np.linspace(0, t, ts_size + 1)               # mesh points in time
-    u_LF = np.zeros((ts_size + 1, xs_size + 1))      # unknown u at new time level for LF
-    u_LW = np.zeros((ts_size + 1, xs_size + 1))      # unknown u at new time level for LW
-    u_quad = np.zeros((ts_size + 1, xs_size + 1))    # unknown u at new time level for Cole-Hopf
+    u_LF = np.zeros((ts_size + 1, xs_size + 1))       # unknown u at new time level for LF
+    u_LW = np.zeros((ts_size + 1, xs_size + 1))       # unknown u at new time level for LW
+    u_quad = np.zeros((ts_size + 1, xs_size + 1))     # unknown u at new time level for Cole-Hopf
     # Set initial condition
     u_quad[0, :] = u_0(xs)
     # advance in time

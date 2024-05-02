@@ -41,9 +41,9 @@ def u_exact(x, t):
 if __name__ == "__main__":
 
     jax.config.update("jax_enable_x64", True)
-    jax.config.update("jax_platform_name", "cpu")
+    jax.config.update("jax_platform_name", "cuda")
 
-    dx = 0.025
+    dx = 0.01
     dt = 0.001
     t_max = 1.0
 
@@ -53,7 +53,7 @@ if __name__ == "__main__":
         t=t_max, dx=dx, dt=dt
     )
 
-    xs_exact = jnp.linspace(0.0, 1.0, int(t_max / dt))
+    xs_exact = jnp.linspace(0.0, t_max, int(t_max / dt))
 
     xs, ts = get_grid(pde)
     xs_size = len(xs)
@@ -100,18 +100,28 @@ if __name__ == "__main__":
     observations = jnp.zeros((ts_size - 1, xs_size - 2))
 
     init_trajectory = filter_smoother(
-        observations, prior, transition_model, observation_model, extended, None, False
-    )
-
-    start = time.time()
-    smoothed_trajectory = parallel_solver(
         observations,
         prior,
         transition_model,
         observation_model,
-        init_trajectory,
-        nb_iter=10,
+        extended,
+        None,
+        False
     )
+
+    @jax.jit
+    def _solver(init_trajectory):
+        return parallel_solver(
+            observations,
+            prior,
+            transition_model,
+            observation_model,
+            init_trajectory,
+            nb_iter=10,
+        )
+
+    start = time.time()
+    smoothed_trajectory = _solver(init_trajectory)
     jax.block_until_ready(smoothed_trajectory)
     end = time.time()
     print("time: ", end - start)

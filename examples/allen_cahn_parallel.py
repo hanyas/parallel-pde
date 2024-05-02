@@ -8,10 +8,11 @@ from bayes_pde.kernels import spatio_temporal
 
 from bayes_pde.utils import get_grid
 from bayes_pde.solvers import parallel_solver
+from allen_cahn_high_fidelity import run_high_fidelity
 
 from parsmooth._base import FunctionalModel, MVNStandard
 from parsmooth.methods import filter_smoother
-from parsmooth.linearization import extended
+from parsmooth.linearization import cubature
 
 import time
 import matplotlib.pyplot as plt
@@ -39,7 +40,7 @@ def u_0(u):
 if __name__ == "__main__":
 
     jax.config.update("jax_enable_x64", True)
-    jax.config.update("jax_platform_name", "cpu")
+    jax.config.update("jax_platform_name", "cuda")
 
     dx = 0.01
     dt = 0.01
@@ -61,7 +62,7 @@ if __name__ == "__main__":
 
     m0 = jnp.hstack((us, dus))
     P0 = jax.scipy.linalg.block_diag(
-        jnp.eye(xs_size - 2) * 0.0,
+        jnp.eye(xs_size - 2) * 1e-8,
         jnp.eye(xs_size - 2),
     )
     prior = MVNStandard(m0, P0)
@@ -93,18 +94,28 @@ if __name__ == "__main__":
     observations = jnp.zeros((ts_size - 1, xs_size - 2))
 
     init_trajectory = filter_smoother(
-        observations, prior, transition_model, observation_model, extended, None, False
-    )
-
-    start = time.time()
-    smoothed_trajectory = parallel_solver(
         observations,
         prior,
         transition_model,
         observation_model,
-        init_trajectory,
-        nb_iter=10,
+        cubature,
+        None,
+        False
     )
+
+    @jax.jit
+    def _solver(init_trajectory):
+        return parallel_solver(
+            observations,
+            prior,
+            transition_model,
+            observation_model,
+            init_trajectory,
+            nb_iter=25,
+        )
+
+    start = time.time()
+    smoothed_trajectory = _solver(init_trajectory)
     jax.block_until_ready(smoothed_trajectory)
     end = time.time()
     print("time: ", end - start)
@@ -116,6 +127,8 @@ if __name__ == "__main__":
     Ps_par = jnp.diagonal(Ps_par, axis1=1, axis2=2)
 
     # Frame have to be adjusted according to the discretization
+    xs_hf, ts_hf, us_hf = run_high_fidelity(dt, dx, t_max, -1.0, 1.0)
+    hf_frames = [0, 50, 75, 100]
     ieks_frames = [0, 50, 75, 100]
 
     fig = plt.figure(figsize=(12, 9))
@@ -123,11 +136,12 @@ if __name__ == "__main__":
         ax = fig.add_subplot(1, 4, idx + 1)
         ax.fill_between(
             xs[1:-1],
-            us_par[frame_idx, :] - 3.0 * jnp.sqrt(Ps_par[frame_idx, :]),
-            us_par[frame_idx, :] + 3.0 * jnp.sqrt(Ps_par[frame_idx, :]),
+            us_par[frame_idx, :] - 2.0 * jnp.sqrt(Ps_par[frame_idx, :]),
+            us_par[frame_idx, :] + 2.0 * jnp.sqrt(Ps_par[frame_idx, :]),
             label="Confidence",
         )
         ax.plot(xs[1:-1], us_par[frame_idx, :], "r-", linewidth=2.0, label="IEKS")
+        ax.plot(xs_hf, us_hf[hf_frames[idx]], 'k--', linewidth=2.5, label='HF')
         if idx == 0:
             ax.set_ylabel("$u$", fontsize="large")
         ax.set_title(r"time = {:.2f}".format(ts[frame_idx]), fontsize="large")

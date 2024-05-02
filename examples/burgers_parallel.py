@@ -12,7 +12,7 @@ from burgers_cole_hopf import run_cole_hopf
 
 from parsmooth._base import FunctionalModel, MVNStandard
 from parsmooth.methods import filter_smoother
-from parsmooth.linearization import extended, cubature
+from parsmooth.linearization import cubature
 
 import time
 import matplotlib.pyplot as plt
@@ -36,9 +36,9 @@ def u_0(u):
 if __name__ == "__main__":
 
     jax.config.update("jax_enable_x64", True)
-    jax.config.update("jax_platform_name", "cpu")
+    jax.config.update("jax_platform_name", "cuda")
 
-    dx = 0.01
+    dx = 0.005
     dt = 0.01
     t_max = 1.0
 
@@ -90,18 +90,29 @@ if __name__ == "__main__":
     observations = jnp.zeros((ts_size - 1, xs_size - 2))
 
     init_trajectory = filter_smoother(
-        observations, prior, transition_model, observation_model, extended, None, False
-    )
-
-    start = time.time()
-    smoothed_trajectory = parallel_solver(
         observations,
         prior,
         transition_model,
         observation_model,
-        init_trajectory,
-        nb_iter=10,
+        cubature,
+        None,
+        False
     )
+
+    @jax.jit
+    def _solver(init_trajectory):
+        return parallel_solver(
+            observations,
+            prior,
+            transition_model,
+            observation_model,
+            init_trajectory,
+            cubature,
+            nb_iter=100,
+        )
+
+    start = time.time()
+    smoothed_trajectory = _solver(init_trajectory)
     jax.block_until_ready(smoothed_trajectory)
     end = time.time()
     print("time: ", end - start)
@@ -114,8 +125,8 @@ if __name__ == "__main__":
 
     # Frame have to be adjusted according to the discretization
     xs_ch, ts_ch, us_ch = run_cole_hopf(dt, dx, t_max, -1.0, 1.0)
-    ch_frames = [0, int(t_max / dt / 3), int(2 * t_max / dt / 3), int(t_max / dt)]
-    ieks_frames = [0, int(t_max / dt / 3), int(2 * t_max / dt / 3), int(t_max / dt)]
+    ch_frames = [0, int(t_max / dt / 4), int(2 * t_max / dt / 4), int(3 * t_max / dt / 4)]
+    ieks_frames = [0, int(t_max / dt / 4), int(2 * t_max / dt / 4), int(3 * t_max / dt / 4)]
 
     fig = plt.figure(figsize=(12, 9))
     for idx, frame_idx in enumerate(ieks_frames):
@@ -134,3 +145,25 @@ if __name__ == "__main__":
         ax.legend(fontsize="large", loc="upper right")
         ax.set_ylim([-1.55, 1.55])
     plt.show()
+
+    # import pandas as pd
+    #
+    # cwd = "/tmp/pycharm_project_689/experiments/plots"
+    #
+    # for idx, frame_idx in enumerate(ch_frames):
+    #     out = pd.DataFrame({
+    #         "x": xs,
+    #         "y": us_ch[frame_idx, :],
+    #     })
+    #     file_name = f"{cwd}/burgers_ref_time_{ts[frame_idx]}.csv"
+    #     out.to_csv(file_name, index=False)
+    #
+    #
+    # for idx, frame_idx in enumerate(ieks_frames):
+    #     out = pd.DataFrame({
+    #         "x": xs[1:-1],
+    #         "y": us_par[frame_idx, :],
+    #         "err": 2.0 * jnp.sqrt(Ps_par[frame_idx, :]),
+    #     })
+    #     file_name = f"{cwd}/burgers_sol_time_{ts[frame_idx]}.csv"
+    #     out.to_csv(file_name, index=False)

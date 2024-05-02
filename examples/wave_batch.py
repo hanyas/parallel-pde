@@ -33,7 +33,7 @@ def u_0(x):
 if __name__ == "__main__":
 
     jax.config.update("jax_enable_x64", True)
-    jax.config.update("jax_platform_name", "cpu")
+    jax.config.update("jax_platform_name", "cuda")
 
     dx = 0.1
     dt = 0.01
