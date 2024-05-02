@@ -1,9 +1,9 @@
 import jax
 import jax.numpy as jnp
 
-from bayes_pde.objects import PDE, SEParams, SDEParams
+from bayes_pde.objects import PDE, SEParams, IWParams
 from bayes_pde.kernels import squared_exponential
-from bayes_pde.kernels import first_order_integrated_wiener
+from bayes_pde.kernels import once_integrated_wiener
 from bayes_pde.kernels import spatio_temporal
 
 from bayes_pde.utils import get_grid
@@ -67,13 +67,13 @@ if __name__ == "__main__":
     prior = MVNStandard(m0, P0)
 
     spatial_params = SEParams(length_scale=1.0, signal_variance=2.5)
-    temporal_params = SDEParams(noise_variance=1.5)
+    temporal_params = IWParams(noise_variance=1.5)
 
     A, Q = spatio_temporal(
         spatial_params,
         temporal_params,
         squared_exponential,
-        first_order_integrated_wiener,
+        once_integrated_wiener,
         xs, dx, dt
     )
     transition_model = FunctionalModel(

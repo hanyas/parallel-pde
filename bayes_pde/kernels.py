@@ -3,8 +3,8 @@ from typing import Callable
 import jax
 import jax.numpy as jnp
 
-from .objects import SEParams, SDEParams, Grid
-from .utils import get_gram_matrix
+from bayes_pde.objects import SEParams, IWParams
+from bayes_pde.utils import get_gram_matrix
 
 
 @jax.jit
@@ -16,7 +16,7 @@ def squared_exponential(
     return signal_variance**2 * jnp.exp(-0.5 * (x - y)**2 / length_scale**2)
 
 
-def first_order_integrated_wiener(
+def once_integrated_wiener(
     time_step: float,
     noise_variance: float
 ):
@@ -38,7 +38,7 @@ def first_order_integrated_wiener(
     return A_dt, Q_dt
 
 
-def second_order_integrated_wiener(
+def twice_integrated_wiener(
     time_step: float,
     noise_variance: float
 ):
@@ -64,7 +64,7 @@ def second_order_integrated_wiener(
 
 def spatio_temporal(
     spatial_params: SEParams,
-    temporal_params: SDEParams,
+    temporal_params: IWParams,
     spatial_kernel: Callable,
     temporal_kernel: Callable,
     spatial_grid: jnp.ndarray,

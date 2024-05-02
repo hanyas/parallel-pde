@@ -4,7 +4,7 @@ from typing import Callable
 import jax
 import jax.numpy as jnp
 
-from .objects import PDE, SEParams
+from bayes_pde.objects import PDE, SEParams
 
 
 @partial(jax.jit, static_argnums=1)

@@ -1,8 +1,5 @@
 from typing import Callable, NamedTuple
 
-import jax
-from jax import numpy as jnp
-
 
 class PDE(NamedTuple):
     a: float
@@ -15,13 +12,6 @@ class PDE(NamedTuple):
     dt: float
 
 
-class Grid(NamedTuple):
-    dx: float
-    dt: float
-    xs: jnp.ndarray
-    ts: jnp.ndarray
-
-
 # Squared Exponential
 class SEParams(NamedTuple):
     length_scale: float
@@ -29,5 +19,5 @@ class SEParams(NamedTuple):
 
 
 # Stochastic Diff. Eq.
-class SDEParams(NamedTuple):
+class IWParams(NamedTuple):
     noise_variance: float

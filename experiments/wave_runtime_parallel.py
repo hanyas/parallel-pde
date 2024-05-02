@@ -1,9 +1,9 @@
 import jax
 import jax.numpy as jnp
 
-from bayes_pde.objects import PDE, SEParams, SDEParams
+from bayes_pde.objects import PDE, SEParams, IWParams
 from bayes_pde.kernels import squared_exponential
-from bayes_pde.kernels import second_order_integrated_wiener
+from bayes_pde.kernels import twice_integrated_wiener
 from bayes_pde.kernels import spatio_temporal
 
 from bayes_pde.utils import get_grid
@@ -65,13 +65,13 @@ def measure_runtime(dt_list, nb_iter=10, nb_runs=25, parallel=True):
 
         # Specify transition model
         spatial_params = SEParams(length_scale=1.0, signal_variance=1000.0)
-        temporal_params = SDEParams(noise_variance=10.0)
+        temporal_params = IWParams(noise_variance=10.0)
 
         A, Q = spatio_temporal(
             spatial_params,
             temporal_params,
             squared_exponential,
-            second_order_integrated_wiener,
+            twice_integrated_wiener,
             xs, dx, dt
         )
         transition_model = FunctionalModel(
