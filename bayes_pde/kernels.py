@@ -11,17 +11,17 @@ from bayes_pde.utils import get_gram_matrix
 def squared_exponential(
     x: float, y: float,
     length_scale: float,
-    signal_variance: float
+    signal_stddev: float
 ):
-    return signal_variance**2 * jnp.exp(-0.5 * (x - y)**2 / length_scale**2)
+    return signal_stddev**2 * jnp.exp(-0.5 * (x - y)**2 / length_scale**2)
 
 
 def once_integrated_wiener(
     time_step: float,
-    noise_variance: float
+    noise_stddev: float
 ):
     dt = time_step
-    q = noise_variance
+    q = noise_stddev
 
     A_dt = jnp.array(
         [
@@ -40,10 +40,10 @@ def once_integrated_wiener(
 
 def twice_integrated_wiener(
     time_step: float,
-    noise_variance: float
+    noise_stddev: float
 ):
     dt = time_step
-    q = noise_variance
+    q = noise_stddev
 
     A_dt = jnp.array(
         [
@@ -73,7 +73,7 @@ def spatio_temporal(
 ):
     A_dt, Q_dt = temporal_kernel(
         time_step,
-        temporal_params.noise_variance
+        temporal_params.noise_stddev
     )
 
     I_Jm1 = jnp.eye(len(spatial_grid) - 2)
@@ -82,7 +82,7 @@ def spatio_temporal(
         kernel_fn=spatial_kernel,
         kernel_params=SEParams(
             spatial_params.length_scale * spatial_diff,
-            spatial_params.signal_variance
+            spatial_params.signal_stddev
         )
     )
 

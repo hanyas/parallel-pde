@@ -15,9 +15,9 @@ class PDE(NamedTuple):
 # Squared Exponential
 class SEParams(NamedTuple):
     length_scale: float
-    signal_variance: float
+    signal_stddev: float
 
 
 # Stochastic Diff. Eq.
 class IWParams(NamedTuple):
-    noise_variance: float
+    noise_stddev: float

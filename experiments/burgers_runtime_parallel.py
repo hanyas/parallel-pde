@@ -62,8 +62,8 @@ def measure_runtime(dt_list, nb_iter=10, nb_runs=25, parallel=True):
         prior = MVNStandard(m0, P0)
 
         # Specify transition model
-        spatial_params = SEParams(length_scale=2.0, signal_variance=25.0)
-        temporal_params = IWParams(noise_variance=0.5)
+        spatial_params = SEParams(length_scale=2.0, signal_stddev=25.0)
+        temporal_params = IWParams(noise_stddev=0.5)
 
         A, Q = spatio_temporal(
             spatial_params,

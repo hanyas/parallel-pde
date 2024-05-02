@@ -66,8 +66,8 @@ if __name__ == "__main__":
     )
     prior = MVNStandard(m0, P0)
 
-    spatial_params = SEParams(length_scale=1.0, signal_variance=2.5)
-    temporal_params = IWParams(noise_variance=1.5)
+    spatial_params = SEParams(length_scale=1.0, signal_stddev=2.5)
+    temporal_params = IWParams(noise_stddev=1.5)
 
     A, Q = spatio_temporal(
         spatial_params,

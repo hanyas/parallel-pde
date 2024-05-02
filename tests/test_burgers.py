@@ -20,7 +20,7 @@ def burgers_equation(pde: PDE, s: jax.Array):
 def test_gram_matrix():
     x = jnp.array([0.0, 1.0, 2.0, 3.0])
     kernel_fn = squared_exponential
-    kernel_params = SEParams(length_scale=1.0, signal_variance=1.0)
+    kernel_params = SEParams(length_scale=1.0, signal_stddev=1.0)
     C = get_gram_matrix(x, kernel_fn, kernel_params)
     assert C.shape == (4, 4)
     assert C[0, 0] == 1.0

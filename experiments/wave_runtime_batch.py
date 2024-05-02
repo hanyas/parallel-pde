@@ -63,8 +63,8 @@ def measure_runtime(dt_list, nb_iter=10, nb_runs=25):
         prior = MVNStandard(m0, P0)
 
         # Specify transition model
-        spatial_params = SEParams(length_scale=1.0, signal_variance=1000.0)
-        temporal_params = IWParams(noise_variance=10.0)
+        spatial_params = SEParams(length_scale=1.0, signal_stddev=1000.0)
+        temporal_params = IWParams(noise_stddev=10.0)
 
         A, Q = spatio_temporal(
             spatial_params,
@@ -136,7 +136,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Configer PDE solvers')
     parser.add_argument('--nb-iter', metavar='nb_iter', type=int, default=10, help='number of solver iterations')
-    parser.add_argument('--nb-runs', metavar='nb_runs', type=int, default=1, help='number of overall evaluations')
+    parser.add_argument('--nb-runs', metavar='nb_runs', type=int, default=10, help='number of overall evaluations')
 
     args = parser.parse_args()
 

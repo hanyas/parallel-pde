@@ -1,9 +1,9 @@
 import jax
 import jax.numpy as jnp
 
-from bayes_pde.objects import PDE, SEParams, SDEParams
+from bayes_pde.objects import PDE, SEParams, IWParams
 from bayes_pde.kernels import squared_exponential
-from bayes_pde.kernels import first_order_integrated_wiener
+from bayes_pde.kernels import once_integrated_wiener
 from bayes_pde.kernels import spatio_temporal
 
 from bayes_pde.utils import get_grid
@@ -12,7 +12,7 @@ from burgers_cole_hopf import run_cole_hopf
 
 from parsmooth._base import FunctionalModel, MVNStandard
 from parsmooth.methods import filter_smoother
-from parsmooth.linearization import extended
+from parsmooth.linearization import extended, cubature
 
 import time
 import matplotlib.pyplot as plt
@@ -57,20 +57,20 @@ if __name__ == "__main__":
 
     m0 = jnp.hstack((us, dus))
     P0 = jax.scipy.linalg.block_diag(
-        jnp.eye(xs_size - 2) * 0.0,
+        jnp.eye(xs_size - 2) * 1e-8,
         jnp.eye(xs_size - 2),
     )
     prior = MVNStandard(m0, P0)
 
     # Specify transition model
-    spatial_params = SEParams(length_scale=2.0, signal_variance=25.0)
-    temporal_params = SDEParams(noise_variance=0.5)
+    spatial_params = SEParams(length_scale=0.95, signal_stddev=3.65)
+    temporal_params = IWParams(noise_stddev=0.065)
 
     A, Q = spatio_temporal(
         spatial_params,
         temporal_params,
         squared_exponential,
-        first_order_integrated_wiener,
+        once_integrated_wiener,
         xs, dx, dt
     )
     transition_model = FunctionalModel(
