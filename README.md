@@ -18,8 +18,8 @@ Finally, install parallel-in-time Kalman-smoothers toolbox
 
     pip install git+https://github.com/hanyas/sqrt-parallel-smoothers
 
-Install `pytest` for testing and `matplotlib` for plots, if needed.
+Install `pytest` for testing, `matplotlib` for plots, and `py-pde` for rereference.
 
  ## Examples
  
-    python examples/burgers.py
+    python examples/burgers_parallel.py
