@@ -1,4 +1,4 @@
-from parsmooth.linearization import extended
+from parsmooth.linearization import extended, cubature
 from parsmooth.methods import iterated_smoothing
 from newton_smoothers import iterated_batch_gauss_newton_smoother
 
@@ -35,7 +35,7 @@ def sequential_solver(
         prior,
         transition_model,
         observation_model,
-        extended,
+        cubature,
         init_trajectory,
         parallel=False,
         criterion=lambda i, *_: i < nb_iter,
@@ -57,7 +57,7 @@ def parallel_solver(
         prior,
         transition_model,
         observation_model,
-        extended,
+        cubature,
         init_trajectory,
         parallel=True,
         criterion=lambda i, *_: i < nb_iter,
