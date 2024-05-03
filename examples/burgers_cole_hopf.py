@@ -22,7 +22,7 @@ def cole_hopf(u, ti, xjs, num_x):
     for xj_idx in range(num_x):
         top = -np.sum(c1 * qw * np.sin(np.pi * (xjs[xj_idx] - c1 * qx)) * np.exp(-np.cos(np.pi * (xjs[xj_idx] - c1 * qx))/c2))
         bot = np.sum(c1 * qw * np.exp(-np.cos(np.pi * (xjs[xj_idx] - c1 * qx))/c2))
-        u[xj_idx] = top/bot
+        u[xj_idx] = top / bot
     return u
 
 

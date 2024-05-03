@@ -19,12 +19,16 @@ import matplotlib.pyplot as plt
 
 
 def burgers_equation(pde: PDE, s: jax.Array):
+    nu = 0.005 / jnp.pi
     flux = lambda u: 0.5 * u ** 2
     J = int(len(s) / 2) + 1
     u = s[:J - 1]
     u_jp1 = jnp.hstack((u[1:], pde.u_b))
     u_jm1 = jnp.hstack((pde.u_a, u[:-1]))
-    f = (flux(u_jp1) - flux(u_jm1)) / (2.0 * pde.dx)
+    f = (
+        (flux(u_jp1) - flux(u_jm1)) / (2.0 * pde.dx)
+        - nu * (u_jp1 - 2. * u + u_jm1) / (pde.dx * pde.dx)
+    )
     du = s[J - 1:]
     return du + f
 
@@ -38,7 +42,7 @@ if __name__ == "__main__":
     jax.config.update("jax_enable_x64", True)
     jax.config.update("jax_platform_name", "cuda")
 
-    dx = 0.005
+    dx = 0.003
     dt = 0.01
     t_max = 1.0
 
