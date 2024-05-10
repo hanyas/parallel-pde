@@ -152,4 +152,4 @@ if __name__ == "__main__":
     dt_list_arr = jnp.array(dt_list)
     res_arr = jnp.vstack((dt_list_arr, runtime_median))
     df = pd.DataFrame(res_arr)
-    df.to_csv("allen-cahn_runtime_batch.csv")
+    df.to_csv("./results/allen-cahn_runtime_batch.csv")

@@ -39,7 +39,7 @@ def measure_runtime(dt_list, nb_iter=10, nb_runs=25, parallel=True):
         print(f"Task {k + 1} out of {len(dt_list)}", end="\n")
 
         dx = 0.1
-        t_max = 1.0
+        t_max = 1.5
 
         pde = PDE(
             a=-1.0, b=1.0,
@@ -101,7 +101,7 @@ def measure_runtime(dt_list, nb_iter=10, nb_runs=25, parallel=True):
                     transition_model,
                     observation_model,
                     init_trajectory,
-                    nb_iter,
+                    nb_iter=nb_iter,
                 )
             else:
                 return sequential_solver(
@@ -110,7 +110,7 @@ def measure_runtime(dt_list, nb_iter=10, nb_runs=25, parallel=True):
                     transition_model,
                     observation_model,
                     init_trajectory,
-                    nb_iter,
+                    nb_iter=nb_iter,
                 )
 
         smoothed_trajectory = _solver(init_trajectory)
@@ -141,7 +141,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Configer PDE solvers')
     parser.add_argument('--parallel', action=argparse.BooleanOptionalAction, help='use parallel or sequential solver')
     parser.add_argument('--nb-iter', metavar='nb_iter', type=int, default=10, help='number of solver iterations')
-    parser.add_argument('--nb-runs', metavar='nb_runs', type=int, default=25, help='number of overall evaluations')
+    parser.add_argument('--nb-runs', metavar='nb_runs', type=int, default=10, help='number of overall evaluations')
 
     args = parser.parse_args()
 
@@ -156,6 +156,6 @@ if __name__ == "__main__":
     df = pd.DataFrame(res_arr)
 
     if args.parallel:
-        df.to_csv("burgers_runtime_parallel.csv")
+        df.to_csv("./results/burgers_runtime_parallel.csv")
     else:
-        df.to_csv("burgers_runtime_sequential.csv")
+        df.to_csv("./results/burgers_runtime_sequential.csv")

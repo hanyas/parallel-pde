@@ -38,7 +38,7 @@ def measure_runtime(dt_list, nb_iter=10, nb_runs=25):
         print(f"Task {k + 1} out of {len(dt_list)}", end="\n")
 
         dx = 0.1
-        t_max = 1.0
+        t_max = 1.5
 
         pde = PDE(
             a=-1.0, b=1.0,
@@ -148,4 +148,4 @@ if __name__ == "__main__":
     dt_list_arr = jnp.array(dt_list)
     res_arr = jnp.vstack((dt_list_arr, runtime_median))
     df = pd.DataFrame(res_arr)
-    df.to_csv("burgers_runtime_batch.csv")
+    df.to_csv("./results/burgers_runtime_batch.csv")
