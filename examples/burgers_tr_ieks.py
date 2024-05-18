@@ -9,11 +9,12 @@ from bayes_pde.kernels import spatio_temporal
 from burgers_cole_hopf import run_cole_hopf
 
 from bayes_pde.utils import get_grid
-from bayes_pde.solvers import parallel_solver
+from bayes_pde.solvers import sequential_solver_with_trust_region
 
-from parsmooth._base import FunctionalModel, MVNStandard
-from parsmooth.methods import filter_smoother
-from parsmooth.linearization import cubature
+from newton_smoothers.recursive.kalman import init_filtering, init_smoothing
+from newton_smoothers.base import FunctionalModel, MVNStandard
+from newton_smoothers.approximation import extended
+from newton_smoothers.utils import mvn_logpdf
 
 import time
 import matplotlib.pyplot as plt
@@ -96,39 +97,55 @@ if __name__ == "__main__":
 
     observations = jnp.zeros((ts_size - 1, xs_size - 2))
 
-    init_trajectory = filter_smoother(
+    init_trajectory = init_filtering(
         observations,
         prior,
         transition_model,
         observation_model,
-        cubature,
-        None,
-        False
+        extended
+    )
+    init_trajectory = init_smoothing(
+        transition_model,
+        init_trajectory,
+        extended
     )
 
     @jax.jit
-    def solver(init_trajectory):
-        return parallel_solver(
+    def gauss_solver(init_trajectory):
+        return sequential_solver_with_trust_region(
             observations,
             prior,
             transition_model,
             observation_model,
             init_trajectory,
-            cubature,
+            extended,
             nb_iter=25,
         )
 
     start = time.time()
-    smoothed_trajectory = solver(init_trajectory)
-    jax.block_until_ready(smoothed_trajectory)
+    gauss_trajectory = gauss_solver(init_trajectory)
+    jax.block_until_ready(gauss_trajectory)
     end = time.time()
     print("time: ", end - start)
 
-    # Get the posterior mean and variance of the solution
+    filtered_trajectory = init_filtering(
+        observations,
+        prior,
+        transition_model,
+        observation_model,
+        extended,
+    )
+
     mask = jnp.kron(jnp.array([1.0, 0.0]), jnp.eye(xs_size - 2))
-    us_par = jnp.einsum("ij, tj -> ti", mask, smoothed_trajectory.mean)
-    Ps_par = jnp.einsum("ij, tjk, kl -> til", mask, smoothed_trajectory.cov, mask.T)
-    Ps_par = jnp.diagonal(Ps_par, axis1=1, axis2=2)
+
+    # Get the posterior mean and variance of the solution
+    us_filt = jnp.einsum("ij, tj -> ti", mask, filtered_trajectory.mean)
+    Ps_filt = jnp.einsum("ij, tjk, kl -> til", mask, filtered_trajectory.cov, mask.T)
+    var_filt = jnp.diagonal(Ps_filt, axis1=1, axis2=2)
+
+    us_gauss = jnp.einsum("ij, tj -> ti", mask, gauss_trajectory.mean)
+    Ps_gauss = jnp.einsum("ij, tjk, kl -> til", mask, gauss_trajectory.cov, mask.T)
+    var_gauss = jnp.diagonal(Ps_gauss, axis1=1, axis2=2)
 
     # Frame have to be adjusted according to the discretization
     xs_ch, ts_ch, us_ch = run_cole_hopf(dt, dx, t_max, -1.0, 1.0)
@@ -138,39 +155,56 @@ if __name__ == "__main__":
     fig = plt.figure(figsize=(12, 9))
     for idx, frame_idx in enumerate(ieks_frames):
         ax = fig.add_subplot(1, 4, idx + 1)
+        # ax.fill_between(
+        #     xs[1:-1],
+        #     us_filt[frame_idx, :] - 2.0 * jnp.sqrt(var_filt[frame_idx, :]),
+        #     us_filt[frame_idx, :] + 2.0 * jnp.sqrt(var_filt[frame_idx, :]),
+        #     label="Confidence",
+        #     color='b',
+        #     alpha=0.25
+        # )
         ax.fill_between(
             xs[1:-1],
-            us_par[frame_idx, :] - 2.0 * jnp.sqrt(Ps_par[frame_idx, :]),
-            us_par[frame_idx, :] + 2.0 * jnp.sqrt(Ps_par[frame_idx, :]),
+            us_gauss[frame_idx, :] - 2.0 * jnp.sqrt(var_gauss[frame_idx, :]),
+            us_gauss[frame_idx, :] + 2.0 * jnp.sqrt(var_gauss[frame_idx, :]),
             label="Confidence",
+            color='r',
+            alpha=0.25
         )
-        ax.plot(xs[1:-1], us_par[frame_idx, :], "r-", linewidth=2.0, label="IEKS")
+        # ax.plot(xs[1:-1], us_filt[frame_idx, :], "b-", linewidth=2.0, label="EKF")
+        ax.plot(xs[1:-1], us_gauss[frame_idx, :], "r-", linewidth=2.0, label="IEKS")
         ax.plot(xs_ch, us_ch[ch_frames[idx], :], 'k--', linewidth=2.5, label='CH')
         if idx == 0:
-            ax.set_ylabel("$u$", fontsize="large")
+            ax.set_ylabel("s$u$", fontsize="large")
         ax.set_title(r"time = {:.2f}".format(ts[frame_idx]), fontsize="large")
         ax.legend(fontsize="large", loc="upper right")
         ax.set_ylim([-1.55, 1.55])
     plt.show()
 
+    # print("EKF Error: ", jnp.mean(jnp.linalg.norm(us_filt - us_ch[:, 1:-1], axis=0)))
+    # print("IEKS Error: ", jnp.mean(jnp.linalg.norm(us_gauss - us_ch[:, 1:-1], axis=0)))
+    #
+    # print("EKF ll: ", jax.vmap(mvn_logpdf)(us_ch[:, 1:-1], us_filt, Ps_filt).sum())
+    # print("IEKS ll: ", jax.vmap(mvn_logpdf)(us_ch[:, 1:-1], us_gauss, Ps_gauss).sum())
+
     # import pandas as pd
     #
-    # cwd = "/tmp/pycharm_project_689/experiments/plots"
+    # # cwd = "/tmp/pycharm_project_689/experiments/plots"
+    # cwd = "../experiments/plots"
     #
     # for idx, frame_idx in enumerate(ch_frames):
     #     out = pd.DataFrame({
     #         "x": xs,
     #         "y": us_ch[frame_idx, :],
     #     })
-    #     file_name = f"{cwd}/burgers_ref_time_{ts[frame_idx]}.csv"
+    #     file_name = f"{cwd}/burgers_ref_time_{ts[frame_idx]}_dx_0025.csv"
     #     out.to_csv(file_name, index=False)
-    #
     #
     # for idx, frame_idx in enumerate(ieks_frames):
     #     out = pd.DataFrame({
     #         "x": xs[1:-1],
-    #         "y": us_par[frame_idx, :],
-    #         "err": 2.0 * jnp.sqrt(Ps_par[frame_idx, :]),
+    #         "y": us_gauss[frame_idx, :],
+    #         "err": 2.0 * jnp.sqrt(var_gauss[frame_idx, :]),
     #     })
-    #     file_name = f"{cwd}/burgers_sol_time_{ts[frame_idx]}.csv"
+    #     file_name = f"{cwd}/burgers_sol_time_{ts[frame_idx]}_dx_0025.csv"
     #     out.to_csv(file_name, index=False)

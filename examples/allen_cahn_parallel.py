@@ -6,9 +6,10 @@ from bayes_pde.kernels import squared_exponential
 from bayes_pde.kernels import once_integrated_wiener
 from bayes_pde.kernels import spatio_temporal
 
+from allen_cahn_high_fidelity import run_high_fidelity
+
 from bayes_pde.utils import get_grid
 from bayes_pde.solvers import parallel_solver
-from allen_cahn_high_fidelity import run_high_fidelity
 
 from parsmooth._base import FunctionalModel, MVNStandard
 from parsmooth.methods import filter_smoother
@@ -19,15 +20,15 @@ import matplotlib.pyplot as plt
 
 
 def allen_cahn_equation(pde: PDE, s: jax.Array):
-    gamma_1 = 0.0001
-    gamma_2 = 5.0
+    gamma = 5.0
+    nu = 5e-3
     J = int(len(s) / 2) + 1
     u = s[:J - 1]
     u_jp1 = jnp.hstack((u[1:], pde.u_b))
     u_jm1 = jnp.hstack((pde.u_a, u[:-1]))
     f = (
-        - gamma_1 * (u_jp1 - 2. * u + u_jm1) / (pde.dx * pde.dx)
-        + gamma_2 * (jnp.power(u, 3) - u)
+        gamma * (jnp.power(u, 3) - u)
+        - nu * (u_jp1 - 2. * u + u_jm1) / (pde.dx * pde.dx)
     )
     du = s[J - 1:]
     return du + f
@@ -40,9 +41,9 @@ def u_0(u):
 if __name__ == "__main__":
 
     jax.config.update("jax_enable_x64", True)
-    jax.config.update("jax_platform_name", "cuda")
+    jax.config.update("jax_platform_name", "cpu")
 
-    dx = 0.01
+    dx = 0.005
     dt = 0.01
     t_max = 1.0
 
@@ -67,8 +68,8 @@ if __name__ == "__main__":
     )
     prior = MVNStandard(m0, P0)
 
-    spatial_params = SEParams(length_scale=1.0, signal_stddev=1.0)
-    temporal_params = IWParams(noise_stddev=1.0)
+    spatial_params = SEParams(length_scale=0.5, signal_stddev=25.0)
+    temporal_params = IWParams(noise_stddev=25.0)
 
     A, Q = spatio_temporal(
         spatial_params,
@@ -104,7 +105,7 @@ if __name__ == "__main__":
     )
 
     @jax.jit
-    def _solver(init_trajectory):
+    def solver(init_trajectory):
         return parallel_solver(
             observations,
             prior,
@@ -112,11 +113,11 @@ if __name__ == "__main__":
             observation_model,
             init_trajectory,
             extended,
-            nb_iter=50,
+            nb_iter=25,
         )
 
     start = time.time()
-    smoothed_trajectory = _solver(init_trajectory)
+    smoothed_trajectory = solver(init_trajectory)
     jax.block_until_ready(smoothed_trajectory)
     end = time.time()
     print("time: ", end - start)
@@ -149,7 +150,6 @@ if __name__ == "__main__":
         ax.legend(fontsize="large", loc="lower right")
     plt.show()
 
-
     # import pandas as pd
     #
     # cwd = "/tmp/pycharm_project_689/experiments/plots"
@@ -171,3 +171,4 @@ if __name__ == "__main__":
     #     })
     #     file_name = f"{cwd}/allen-cahn_sol_time_{ts[frame_idx]}.csv"
     #     out.to_csv(file_name, index=False)
+    

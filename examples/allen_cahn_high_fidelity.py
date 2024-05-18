@@ -1,20 +1,13 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Apr 22 11:28:03 2024
-
-@author: mhstr
-"""
-
 from jax import numpy as jnp
 
 import numpy as np
-from pde import PDE, CartesianGrid, MemoryStorage, ScalarField, plot_kymograph
+from pde import PDE, CartesianGrid, MemoryStorage, ScalarField
 
 
 def run_high_fidelity(dt, dx, t, a, b):
 
     # initialize the equation and the space
-    eq = PDE({"φ": "0.0001*laplace(φ) + 5 * φ - 5 * φ**3"})
+    eq = PDE({"φ": "0.005 * laplace(φ) + 5 * φ - 5 * φ**3"})
     grid = CartesianGrid([[a, b]], [int((b - a) / dx)], periodic=True)
     state = ScalarField.from_expression(grid, "x**2 * cos(pi*x)")
     

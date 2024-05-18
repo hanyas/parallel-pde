@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Apr 22 10:51:29 2024
-
-@author: mhstr
-"""
-
 import numpy as np
 from numpy.polynomial.hermite import hermgauss
 
@@ -13,7 +6,7 @@ u_0 = lambda x: -np.sin(np.pi * x)
 
 qn = 128                # order of the quadarture
 qx, qw = hermgauss(qn)  # points and weights
-nu = 0.005 / np.pi      # artificial viscosity
+nu = 1e-2  # 0.005 / np.pi      # artificial viscosity
 c2 = 2.0 * np.pi * nu
 
 
