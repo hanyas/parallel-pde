@@ -1,4 +1,7 @@
 # Parallel-in-Time Probabilistic Solutions for PDEs
+Companion code for the paper "Parallel-in-Time Probabilistic Solutions for Time-Dependent Nonlinear Partial Differential Equations".
+
+This code was written by [Hany Abdulsamad](https://github.com/hanyas), [Sahel Iqbal](https://github.com/Sahel13) and [Tripp Cator](https://github.com/DurwardCator)
 
 ## Installation
  
