@@ -21,7 +21,7 @@ The Newton-smoother package is optional for second-order and regularized algorit
 
     pip install git+https://github.com/hanyas/second-order-smoothers
 
-Install `pytest` for testing, `matplotlib` for plots, and `py-pde` for rereference.
+Install `pytest` for testing, `matplotlib` for plots, and `py-pde` for rereference solutions.
 
  ## Examples
  
