@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name="bayes_pde",
+    name="parpde",
     version="0.1.0",
     description="Parallel-in-time probabilistic solutions to PDEs",
     author="Hany Abdulsamad, Sahel Iqbal, Tripp Cator",
@@ -17,6 +17,6 @@ setup(
         "py-pde",
         "pytest",
     ],
-    packages=["bayes_pde"],
+    packages=["parpde"],
     zip_safe=False,
 )

@@ -3,8 +3,8 @@ from typing import Callable
 import jax
 import jax.numpy as jnp
 
-from bayes_pde.objects import SEParams, IWParams
-from bayes_pde.utils import get_gram_matrix
+from parpde.objects import SEParams, IWParams
+from parpde.utils import get_gram_matrix
 
 
 @jax.jit

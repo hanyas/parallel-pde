@@ -1,9 +1,9 @@
 import jax
 import jax.numpy as jnp
 
-from bayes_pde.objects import PDE, SEParams
-from bayes_pde.kernels import squared_exponential
-from bayes_pde.utils import get_grid, get_gram_matrix
+from parpde.objects import PDE, SEParams
+from parpde.kernels import squared_exponential
+from parpde.utils import get_grid, get_gram_matrix
 
 
 def burgers_equation(pde: PDE, s: jax.Array):

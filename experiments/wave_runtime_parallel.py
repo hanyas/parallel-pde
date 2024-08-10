@@ -1,13 +1,13 @@
 import jax
 import jax.numpy as jnp
 
-from bayes_pde.objects import PDE, SEParams, IWParams
-from bayes_pde.kernels import squared_exponential
-from bayes_pde.kernels import twice_integrated_wiener
-from bayes_pde.kernels import spatio_temporal
+from parpde.objects import PDE, SEParams, IWParams
+from parpde.kernels import squared_exponential
+from parpde.kernels import twice_integrated_wiener
+from parpde.kernels import spatio_temporal
 
-from bayes_pde.utils import get_grid
-from bayes_pde.solvers import sequential_solver, parallel_solver
+from parpde.utils import get_grid
+from parpde.solvers import sequential_solver, parallel_solver
 
 from parsmooth._base import FunctionalModel, MVNStandard
 from parsmooth.methods import filter_smoother
