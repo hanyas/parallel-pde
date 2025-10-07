@@ -23,6 +23,18 @@ The Newton-smoother package is optional for second-order and regularized algorit
 
 Install `pytest` for testing, `matplotlib` for plots, and `py-pde` for rereference solutions.
 
- ## Examples
+## Examples
  
     python examples/burgers_parallel.py
+    
+## Cite
+```
+@inproceedings{iqbal2024parallel,
+  title={Parallel-in-Time Probabilistic Solutions for Time-Dependent Nonlinear Partial Differential Equations}, 
+  author={Iqbal, Sahel and Abdulsamad, Hany and Cator, Tripp and Braga-Neto, Ulisses and Särkkä, Simo},
+  booktitle={2024 IEEE 34th International Workshop on Machine Learning for Signal Processing (MLSP)}, 
+  year={2024},
+}
+  doi={10.1109/MLSP58920.2024.10734739}}
+
+ 
